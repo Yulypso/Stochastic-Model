@@ -99,6 +99,17 @@ Pour l'ARMA2, on observe une faible corrélation empirique aux retards 2, 6, 10,
 
 # Partie II : Analyse des précipitations mensuelles à San Francisco Charger les données depuis le fichier sanfran.dat, disponible sur le moodle.
 
+```{r}
+library("rio")
+data<-import('./sanfran.dat')
+data_list <- split(data, seq(nrow(data)))
+```
+
+```{r}
+
+```
+
+
 ## 1)
 ### a) La série temporelle est-elle stationnaire? Si non, la modifier pour qu’elle le devienne et sauvegarder cette série temporelle dans une nouvelle variable.
 

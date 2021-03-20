@@ -18,7 +18,7 @@ library("rio")
 
 ### Question 2
 ```{r}
-data<-import('./trafic.dat')
+data<-import('./trafic.dat');
 ```
 
 ```{r}

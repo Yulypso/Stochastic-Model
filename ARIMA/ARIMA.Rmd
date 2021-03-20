@@ -18,21 +18,84 @@ Pour que ce processus X_t soit stationnaire du second ordre (faiblement stationn
 Il faut que:  
     1. a_p != 0 et b_q !=0  
     2. a et b ne doivent pas avoir de racines communes et de modules > 1  
-    3. epsilon doit être un bruit blanc de variance sigma^2
+    3. epsilon doit être un bruit blanc de variance sigma^2 (est un processus stationnaire)
+
+De ce fait pour avoir un processus stationnaire, il faut que les coefficients composée par le calcul des AR et MA soient inférieur strictement à 1 en valeur absolue.  
+Un processus MA(q) est toujours stationnaire.
     
 ### 2) En utilisant la fonction R arima.sim, simuler plusieurs processus AR_p et MA_q (p et q d’un faible ordre de grandeur, c'est-à-dire [1,10[). Rappeler la formule mathématique des processus à simuler et vérifier que le choix de p et q respecte les conditions de stationnarité.
 
+
+#### Simulation d'un processus AR(p)
+
+=> AR(p): Processus autorégressif d'ordre p
+![Processus AR(p)](./images//AR_p.png)
+
+Simulons un processus AR(4) par exemple : X_t = 0.9X_t-1 - 0.5X_t-2 + 0.4X_t-3 - 0.2X_t-4
+
 ```{r}
-#ts.sim <- arima.sim(n = 2, list(ar = c(0.8897, -0.4858), ma = c(-0.2279, 0.2488)), sd = sqrt(0.2))
-ts.sim <- arima.sim(n=200, list(order = c(1,1,0), ar = c(0.7, 0.5),  ma=c(0.2, 0.3)), sd=sqrt(0.2))
-ts.plot(ts.sim)
+ts_ar.sim <- arima.sim(n = 100, list(ar = c(0.9, -0.5, 0.4, -0.2)))
+ts.plot(ts_ar.sim)
 ```
+ 
+Nous avons bien tous nos coefficients a_i pour AR inférieur strictement à 1 en valeur absolue.
+
+
+#### Simulation d'un processus MA(q)
+
+=> MA(q): Processus moyenne mobile d'ordre q
+![Processus MA(q)](./images//MA_q.png)
+
+Simulons un processus MA(4) par exemple : X_t = 0.7Z_t-1 - 0.6Z_t-2 - 0.4Z_t-3 + 0.7Z_t-4
+
+```{r}
+ts_ma.sim <- arima.sim(n = 100, list(ma = c(0.7, -0.6, -0.4, 0.7)))
+ts.plot(ts_ma.sim)
+```
+
+Nous avons bien tous nos coefficients b_i pour MA inférieur strictement à 1 en valeur absolue.
 
 
 ### 3) Observer les auto-corrélations empiriques. Que constatez-vous?
 
+```{r}
+acf_ar <- acf(ts_ar.sim, type=('correlation'))
+```
+
+Pour l'autocorrélation empirique du processus AR semble particulièrement forte pour les décalages 1, 2 et 3.  
+0 étant une auto-corrélation avec lui-même d'où la valeur de 1.0 maximale. L'autocorrélation empirique semble être périodique. Les décalages 5, 6, 7 et 8 ont une corrélation plus faible voir nulle.  
+
+
+```{r}
+acf_ma <- acf(ts_ma.sim, type=('correlation'))
+```
+Pour l'autocorrélation empirique du processus MA semble être très peu corrélée à pour chaque décalage.L'autocorrélation empirique semble être périodique. 
+
+
+La période d'autocorrélation empirique du processus AR donnée par le décalage est plus grande que la période d'autocorrélation empirique du processus MA. 
+
+
+
 ### 4) Simuler plusieurs ARMAp,q. Observer et interpréter les auto-corrélations empiriques.
 
+```{r}
+ts_arma1.sim <- arima.sim(n = 100, list(ar = c(0.9, -0.5, 0.4, -0.2), ma = c(0.7, -0.6, -0.4, 0.7)))
+ts.plot(ts_arma1.sim)
+
+ts_arma2.sim <- arima.sim(n = 100, list(ar = c(0.5, 0.4, -0.8), ma = c(0.4, -0.9, -0.7)))
+ts.plot(ts_arma2.sim)
+```
+
+```{r}
+acf_arma1 <- acf(ts_arma1.sim, type=('correlation'))
+acf_arma2 <- acf(ts_arma2.sim, type=('correlation'))
+```
+
+Pour l'ARMA1, on observe une faible corrélation empirique à partir du 5 eme décalage. 
+0 étant une auto-corrélation avec lui-même d'où la valeur de 1.0 maximale.
+
+Pour l'ARMA2, on observe une faible corrélation empirique aux retards 2, 6, 10, 11 et 18.
+0 étant une auto-corrélation avec lui-même d'où la valeur de 1.0 maximale.
 
 # Partie II : Analyse des précipitations mensuelles à San Francisco Charger les données depuis le fichier sanfran.dat, disponible sur le moodle.
 

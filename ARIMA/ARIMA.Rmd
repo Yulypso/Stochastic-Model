@@ -101,12 +101,24 @@ Pour l'ARMA2, on observe une faible corrélation empirique aux retards 2, 6, 10,
 
 ```{r}
 library("rio")
-data<-import('./sanfran.dat')
+data<-import('./sanfran.dat', header=FALSE)
 data_list <- split(data, seq(nrow(data)))
 ```
 
 ```{r}
+library('dplyr')
+library('data.table')
 
+length(data_list)
+data_reformat <- list()
+
+for(i in 1:length(data_list)) {
+  for(j in 1:6) {
+    data_reformat[[(i-1)*6+j]] <- as.double(data_list[[i]][j])
+  }
+}
+
+data_ts <-ts(data_reformat, start=c(1963,1), frequency=12); data_ts
 ```
 
 

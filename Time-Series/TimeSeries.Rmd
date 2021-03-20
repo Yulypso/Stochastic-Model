@@ -1,0 +1,497 @@
+---
+title: "TP1 Séries temporelles"
+author: "Thierry KHAMPHOUSONE IA1"
+output:
+  pdf_document: default
+  html_notebook: default
+---
+
+# Partie 1
+
+## Fonction de base sur la série temporelle
+
+### Question 1
+
+```{r}
+library("rio")
+```
+
+### Question 2
+```{r}
+data<-import('./trafic.dat')
+```
+
+```{r}
+str(data)
+```
+La nature de l'objet est un data frame. nous avons 18 observations de 12 variables de nature quantitative.
+
+```{r}
+is.ts(data)
+```
+Notre objet n'est pas un objet time series
+
+```{r}
+datats<-as.ts(data)
+```
+Transformer df en un objet du type time series
+
+```{r}
+is.ts(datats)
+```
+Vérification, notre objet est bien un objet time series
+
+```{r}
+datats<-ts(data, start=c(1963,1), frequency=12)
+```
+
+```{r}
+datats
+```
+
+```{r}
+tsp(datats)
+```
+
+```{r}
+frequency(datats)
+```
+
+```{r}
+par(mfrow = c(1,3))
+```
+
+```{r}
+ts.plot(datats)
+```
+
+```{r}
+matrix(datats, 12, 10)
+```
+
+```{r}
+matrix(datats, 10, 12)
+```
+
+```{r}
+ts.plot(matrix(datats, 12, 10)) #mois en abscisse
+#12 années, 10 mois
+ts.plot(matrix(datats, 10, 12)) #années en abscisse
+#10 années, 12 mois
+```
+
+```{r}
+Xdata=window(datats, c(1970, 4), 1980)
+```
+Extraction d'une sous série temporelle
+
+```{r}
+Xdata
+```
+
+## Simulation d'un bruit blanc gaussien
+
+```{r}
+eps<-rnorm(100)
+```
+
+```{r}
+str(eps)
+```
+la nature de l'objet eps est 'numeric' et est de longueur 100. 
+
+```{r}
+y<-sort(eps)
+par(mfrow = c(1,2))
+hist(eps, freq=FALSE)
+lines(y, dnorm(y), col="red")
+```
+On remarque bien que la densité est plus élevée en 0 et que les données semblent suivre une loi normale N(0,1).
+
+```{r}
+qqnorm(eps)
+qqline(eps, col="red") #droite de regression linéaire des moindres carrés
+abline(0, 1) #meilleure corrélation possible entre les données et leur moyennes (distribution normale 0,1)
+```
+### Question 3
+
+#### A. Comment générer un vecteur de composantes qui suivent une loi normale de moyenne m et d’écart-type sigma=2 à partir du vecteur eps ? avec la fonction rnorm ? Faire help(norm) pour vous aider.
+
+```{r}
+eps1<-rnorm(n=1000, sd=2)
+eps2<-rnorm(n=10000, sd=2)
+```
+
+
+#### B. Recommencer cette simulation mais avec un bruit blanc de longueur 1 000 puis 10 000.
+
+Avec eps1 n=1000:
+```{r}
+y<-sort(eps1)
+par(mfrow=c(1,2))
+hist(eps1, freq=FALSE)
+lines(y, dnorm(y), col="red")
+```
+```{r}
+qqnorm(eps1)
+qqline(eps1, col="red") 
+abline(0, 2)
+```
+Avec eps2 n=10000:
+
+```{r}
+y<-sort(eps2)
+par(mfrow=c(1,2))
+hist(eps2, freq=FALSE)
+lines(y, dnorm(y), col="red")
+```
+```{r}
+qqnorm(eps2)
+qqline(eps2, col="red") 
+abline(0, 2)
+```
+#### C. Vérifier que l’histogramme se rapproche de celui d’une loi normale.
+
+Plus on augmente la longueur du bruit blanc, plus on se rapproche d'une loi normale. 
+
+#### D. Vérifier que la droite de régression des moindres carrés ordinaires se rapproche de la première bissectrice.
+
+On a bien notre droite rouge (des moindres carrés) qui se rapproche de la droite noire (premiere bissectrice)
+
+#### E. Pourquoi ?
+
+Le rapprochement a lieu car la droite noire représente la meilleure corrélation possible entre les données et leur moyennes (distribution normale 0,1) et étant donné que la droite des moindres carrés est une droite qui passe par la plus petite distance entre tous les points. Or nos données se rapprochent d'une loi normale, c'est pourquoi notre droite rouge se rapproche de notre droite noire.
+
+
+## Simulation d'une série temporelle
+
+### Question 4 
+
+générer une série temporelle synthétique entre les deux dates.
+donc les étapes serait de créer un objet ts allant de start mars 1980 end decembre 2000 avec freq=12. 
+
+Créer un vecteur de 0 qu'on va ensuite remplir en itérant t sur la longueur de y où chaque valeur de y a l'instant t correspondra à l'équation Yt=Zt+St+Et 
+
+Zt = une fonction droite affine classique
+Dans une boucle for t de longueur 0 à y, 
+
+St = on remplace t par la variable de la boucle for et l'additionner au résultat de Z 
+
+Et = faire référance avec la partie sur bruit gaussien, où c'est généralement ce qu'on fait
+
+on l'ajoute a St et Zt ensuite. 
+
+```{r}
+Y<-ts(0, start=c(1980, 3), end=c(2000, 12), frequency=12)
+S_t<-ts(0, start=c(1980, 3), end=c(2000, 12), frequency=12)
+E_t<-rnorm(n=length(Y), sd=2)
+
+for(t in 0:length(Y)) {
+  Z_t<-0.2*t+2
+  S_t[t]<-cos(2*pi*(t-1980))
+  Y[t]<-(Z_t+S_t[t]+E_t[t])
+}
+```
+
+```{r}
+ts.plot(Y)
+```
+
+
+### Question 5
+```{r}
+str(Y)
+```
+Nous avons bien un objet Time-Series
+
+### Question 6
+
+Représentation de la série
+```{r}
+ts.plot(Y)
+```
+Superposition des séries annuelles des années 1981 à 1998
+
+```{r}
+superposition81_98<-window(Y, c(1981, 1), c(1998,12))
+```
+
+```{r}
+matrix(superposition81_98, 12, ) #mois en abscisse
+```
+
+```{r}
+ts.plot(matrix(superposition81_98, 12, ))
+```
+Extraction d'une sous série commençant en janvier 1985 et finissant en juillet 1991
+
+```{r}
+serie85_91<-window(Y, c(1985, 1), c(1991,7))
+ts.plot(serie85_91)
+```
+
+
+# Exercice 1: à rendre pour le dimanche 2 mars 2021 à 23h30
+
+## 1. Définir un modèle additif avec une tandance quadratique, une composante saisonnière en fonction périodique de période 4 et une erreur de tyoe bruit blanc gaussien.
+
+Pour simuler une série temporelle trimestrielle débutant au deuxième trimestre 1986 et finissant au premier trimestre 2001 satisfaisant
+Nous choisirons les différents paramètres du modèle : coefficients de la tendance, expression de la saisonnalité, écart-type du bruit blanc).
+
+
+```{r}
+Y<-ts(0, start=c(1986, 2), end=c(2001, 1), frequency=4)
+Z_t<-ts(0, start=c(1986, 2), end=c(2001, 1), frequency=4)
+S_t<-ts(0, start=c(1986, 2), end=c(2001, 1), frequency=4)
+E_t<-rnorm(n=length(Y), sd=2)
+a<-0.01
+b<--0.2
+c<-6
+  
+for(t in 1:length(Y)) {
+  Z_t[t]<-(a*t^2+b*t+c)
+  S_t[t]<-cos(2*pi*(t-1986))
+  Y[t]<-(Z_t[t]+S_t[t]+E_t[t])
+}
+```
+
+## 2. Afficher les différentes composantes. Tracer la tendance, la saisonalité, le bruit ainsi que la série chronologique obtenue
+
+```{r}
+ts.plot(Y) # serie chronologique
+```
+
+```{r}
+filt<-rep(1/4, 3) #definition des coefficients de la moyenne mobile d'ordre 5
+filt<-(c(1/8,filt,1/8))
+Z<-filter(Y, filter=filt, sides=2) # filtre par moyenne arithmétique d'ordre 5 de la série
+```
+
+```{r}
+# tendance
+Z<-ts(Z, start=c(1986, 2), end=c(2001, 1), frequency=4) # renouvellement de la série des temps
+ts.plot(Z) 
+```
+
+```{r}
+S<-Y-Z
+s<-tapply(S,cycle(S),mean,na.rm=T)
+
+s<-s-mean(s)
+CVS<-matrix(1, 60, 4)
+for(i in 1:60){
+  for(j in 1:4){
+    CVS[i,j]=t(matrix(Y,4,60))[i,j]-s[j]
+  }
+}
+```
+
+
+```{r}
+# Saisonalité
+CVS=as.vector(t(CVS)) #convert to vector
+CVS=as.ts(CVS) #convert into time series
+CVS=ts(CVS, start=c(1986, 2), end=c(2001, 1), frequency=4)
+ts.plot(Y)
+ts.plot(CVS)
+```
+
+```{r}
+# Résidus
+y=time(CVS)
+z=time(CVS)^2
+CVS.lm=lm(CVS~y+z) 
+CVS.lm$coefficients
+res=CVS-CVS.lm$fitted.values
+res=res/sqrt(var(res))
+acf(res)
+hist(res)
+qqnorm(res) 
+abline(0,1)
+```
+
+Nous avons dans l'ordre: a série chronologique obtenue, la tendance, la saisonnalité et le bruit.
+```{r}
+Y.dcp=decompose(Y, type="add")
+plot(Y.dcp)
+```
+## 3. Superposer les séries annuelles des années 1987 à 2000
+
+```{r}
+superposition1987_2000<-window(Y, c(1987, 1), c(2000,4))
+mat<-matrix(superposition1987_2000, 4, 14) #les trimestres sont en abscisse
+ts.plot(mat)
+```
+Nous avons la représentation de chaque ligne qui correspond à une année en fonction du temps en trimestre. 
+
+```{r}
+mat<-matrix(superposition1987_2000, 14, 4) # les trimestres sont représentés par les lignes et en abscisse les années
+ts.plot(mat)
+```
+
+
+## 4. Extraire une sous série commençant au deuxième trimestre 1989 et finissant au troisième trimestre 1991
+
+```{r}
+serie1989_1991<-window(Y, c(1989, 2), c(1991,3))
+ts.plot(serie1989_1991)
+```
+
+# Exercice 2: à rendre pour le dimanche 2 mars 2021 à 23h30
+
+Simuler une série chronologique (Y_t)t=1,..., 100 suivant le modèle : 
+Y_t = 0.01t + 1 + 2 sin(2*Pi*t/5) + E_t
+
+```{r}
+Y2<-ts(0, start=c(1992,1), end=c(1999,12), frequency=12)
+
+E_t<-rnorm(n=length(Y2), sd=(1/10))
+  
+for(t in 1:length(Y2)) {
+  Z_t<-0.01*t+1
+  S_t<-2*sin(2*pi*t/5)
+  Y2[t]<-(Z_t+S_t+E_t[t])
+}
+length(Y2);
+```
+
+```{r}
+# représentation de la série chronologique originale
+ts.plot(Y2)
+```
+## 1. Déterminer la tendance, la saisonalité de cette série chronologique. Les tracer. 
+
+## 2. Utiliser la méthode des moyennes mobiles ci-dessus pour éliminer la saisonnalité 
+
+-> Par lecture graphique, je peux supposer que la tendance est croissante et qu'il existe une saisonnalité. De plus, il semble que cette série chronologique pourrait être décrite à l'aide d'un modèle additif car les fluctuations saisonnières semblent constantes dans le temps et les fluctuations aléatoires (résidus) semblent être constantes dans le temps.
+
+Afin de déteminer la tendance, nous pouvons utiliser la méthode des moyennes mobiles pour éliminer la saisonnalité avec une moyenne mobile d'ordre 5 correspondant à la période de saisonalité. 
+
+```{r}
+filt<-rep(1/5, 5) #definition des coefficients de la moyenne mobile d'ordre 5
+length(filt)
+Z<-filter(Y2, filter=filt, sides=2) # filtre par moyenne arithmétique d'ordre 5 de la série
+```
+
+```{r}
+Z<-ts(Z, start=c(1992,1), frequency=12) # renouvellement de la série des temps
+ts.plot(Y2,Z)
+```
+
+On observe sur cette représentation la série originale ainsi que la série filtrée, c'est-à-dire la série originale auquelle on lui a retiré sa saisonnalité. 
+
+La série filtrée est maintenant uniquement composée de sa tendance et de ses résidus. 
+
+## puis estimer les coefficients du saisonnier.
+
+```{r}
+# nous obtenons la saisonalité en retirant la Tendance+Résidus à la série originale
+S<-Y2-Z
+# Estimation des coefficients du saisonnier
+s<-tapply(S, cycle(S), mean, na.rm=T); s
+```
+
+## Utiliser une régression linéaire par moindres carrés pour estimer les coefficients de la tendance. 
+
+Estimons la tendance par une droite de régression linéaire par moindres carrés.
+```{r}
+length(Y2)
+s<-s-mean(s)
+CVS<-matrix(1, 8, 12) # On a 8 ans de 12 mois 
+for(i in 1:8){ # parcours des annéesss
+  for(j in 1:12){ # parcours des mois
+    CVS[i,j]=t(matrix(Y2, 12, 8))[i,j]-s[j]
+  }
+}
+```
+
+
+```{r}
+#CVS is a list here
+CVS=as.vector(t(CVS)) #convert to vector
+CVS=as.ts(CVS) #convert into time series
+CVS=ts(CVS, start=c(1992,1), frequency=12)
+ts.plot(Y2)
+ts.plot(CVS)
+```
+
+
+```{r}
+y=time(CVS) #count nb of values
+z=time(CVS)^2
+CVS.lm=lm(CVS~y+z)
+
+# Coefficients de la tendance : a + bt + ct^2 
+CVS.lm$coefficients 
+summary(CVS.lm)
+```
+
+
+```{r}
+ts.plot(CVS)
+ts.plot(CVS.lm$fitted.values)
+```
+
+## 4. Comparer les estimateurs avec les vrais coefficients
+
+Sachant qu'on a Yt = 0,01t + 1 + 2 sin(2 pi t/5) + Et ,
+
+Les vrais coefficients de la tendance sont :
+a = 0
+b = 0.01
+c = 1
+
+et on a : 
+
+```{r}
+CVS.lm$coefficients
+a <- CVS.lm$coefficients[1]
+b <- CVS.lm$coefficients[2]
+c <- CVS.lm$coefficients[3]
+```
+
+
+On remarque que les coefficients semblent approximer les vrais coefficients de la tendance. Notre modèle semble correct. 
+
+
+## 5. Proposer une prévision à l'horizon 3
+
+Faisons une prévision pour 2003.
+```{r}
+X1<-rep(1:12)
+for(i in 1:12){
+  X1[i]=a+b*(2003+(i-1)/12)+c*(2003+(i-1)/12)^2+s[i]
+}
+X1
+```
+
+```{r}
+X2=c(as.vector(Y2), X1)
+X2=as.ts(X2)
+X2=ts(X2, start=c(1992,1), frequency=12)
+ts.plot(X2)
+```
+## 6. Analyser les résidus, Les représenter
+
+Les résidus ne semblent pas suivre une loi normale ou plutôt, ils sont périodiques entre -1 et 1. 
+
+
+```{r}
+res=CVS-CVS.lm$fitted.values
+res=res/sqrt(var(res))
+acf(res)
+hist(res)
+qqnorm(res)
+abline(0,1)
+```
+
+## 7. Appliquer la fonction decompose et comparer avec les vraies valeurs
+
+```{r}
+Y2=as.ts(Y2)
+Y2<-ts(Y2, start=c(1992,1), frequency=12)
+Y2.dcp=decompose(Y2, type="add")
+plot(Y2.dcp)
+```
+Avec la fonction decompose, on remarque qu'on a bien nos résidus qui semblent être périodique, on retrouve bien une tendance croissante, une saisonnalité et un observé sinusoidale. 
+

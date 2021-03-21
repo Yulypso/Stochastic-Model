@@ -106,39 +106,143 @@ data_list <- split(data, seq(nrow(data)))
 ```
 
 ```{r}
-library('dplyr')
 library('data.table')
-
 length(data_list)
-data_reformat <- list()
+data_reformat <- c()
 
 for(i in 1:length(data_list)) {
   for(j in 1:6) {
-    data_reformat[[(i-1)*6+j]] <- as.double(data_list[[i]][j])
+    data_reformat[(i-1)*6+j] <- as.double(data_list[[i]][j])
   }
 }
-
-data_ts <-ts(data_reformat, start=c(1963,1), frequency=12); data_ts
 ```
-
 
 ## 1)
 ### a) La série temporelle est-elle stationnaire? Si non, la modifier pour qu’elle le devienne et sauvegarder cette série temporelle dans une nouvelle variable.
 
+```{r}
+data_ts <-ts(data_reformat, start=c(1932,1), end=c(1966,12), frequency=12)
+data_ts_statio <- diff(data_ts)
+ts.plot(data_ts_statio)
+```
+
+Afin d'éliminer la saisonnalité, j'ai choisi d'utiliser le lissage par moyenne mobile d'ordre 12 car sur le graphique, les phases de croissance et de baisse semblent se renouveller chaque année avec une certaine régularité. 
+
+```{r}
+# filtre par moyenne arithmétique d'ordre 12 de la série pour obtenir la tendance
+#data_ts_statio<-stats::filter(data_ts, c(1/22, rep(1/11, 12), 1/22), sides=2) 
+#data_ts_statio<-ts(data_ts_statio, start=c(1963,1), end=c(1993,12), frequency=12)
+#ts.plot(data_ts_statio) 
+```
+
 ### b) Proposer un modèle AR_p ou AM_q adapté sur ces données. Valider la modélisation en testant les résidus.
+
+Afin de déterminer le modèle AR(p), MA(q) ou ARMA(p,q) nous pouvons analyser l'autocorrélation et l'autocorrélation partielle. 
+
+Si au retard p nous avons une autocorrélation (ACF) et pas d'autocorrélation partielle (PACF) alors nous devrions choisir d'implémenter le modèle AR(p)
+
+Si au retard q nous avons une autocorrélation partielle (PACF) et pas d'autocorrélation (ACF) alors nous devrions choisir d'implémenter le modèle MA(q)
+
+Si l'autocorrélation (ACF) et l'autocorrélation partielle (PACF) semblent "se suivre" alors nous devrions choisir d'implémenter le modèle ARMA(p,q)
+
+
+
+```{r}
+# ACF: corrélation entre une observation avec la valeur du retard
+acf(data_ts_statio)
+```
+
+
+```{r}
+# PACF: corrélation d'une observation qui n'est pas prise en compte par l'observation antérieure décalée (autocorrélation partielle)
+pacf(data_ts_statio)
+```
+
+
+
+Proposition d'un modèle MA(q) adapté sur ces données. 
+
+```{r}
+ts_sanfran_ma.sim <- arima.sim(n = 420, list(ma = data_ts_statio))
+ts.plot(ts_sanfran_ma.sim)
+acf(ts_sanfran_ma.sim)
+```
+
+Validation de la modélisation en testant les résidus : 
+
+```{r}
+S <- (data_ts - (round(data_ts_statio, 2)))
+s<-tapply(S,cycle(S),mean,na.rm=T)
+
+s<-s-mean(s)
+CVS<-matrix(1, 35, 12)
+for(i in 1:35){
+  for(j in 1:12){
+    CVS[i,j]=t(matrix(data_ts,12,35))[i,j]-s[j]
+  }
+}
+# Nous avons 35 ans de données sur 12 mois
+```
+
+
+```{r}
+CVS=as.vector(t(CVS)) #convert to vector
+CVS=as.ts(CVS) #convert into time series
+CVS=ts(CVS, start=c(1932, 1), end=c(1966, 12), frequency=12)
+ts.plot(CVS)
+```
+
+```{r}
+y=time(CVS) #count nb of values
+z=time(CVS)^2
+CVS.lm=lm(CVS~y+z)
+res=CVS-CVS.lm$fitted.values
+res=res/sqrt(var(res))
+acf(res)
+```
 
 ### 2) En utilisant les données d’origine de 1932 à 1963, tester un modèle AR_2 avec une composante saisonnière, c’est-à-dire un modèle SARIMA_2,0,0,12.
 
+```{r}
+data_ts_1932_1963 <- window(data_ts_statio, c(1932, 1), c(1963,12))
+model<-arima(data_ts_1932_1963, order=c(2,0,0), list(order=c(2,0,0), period=12)); model
+```
+
+
 ### 3) Calculer et afficher les résidus du modèle SARIMA_2,0,0,12.
+
+```{r}
+Box.test(model$residuals)
+```
+
+
+```{r}
+qqnorm(model$residuals) 
+```
 
 ### 4) Utiliser le modèle précédent pour prédire les précipitations mensuelles de 1964, 1965 et 1966. Superposer sur un graphique les prédictions et les valeurs réelles.
 
+```{r}
+
+```
+
 ### 5) Faire de même pour le modèle AR_2 proposé dans la partie 1), sur les données correspondantes.
+
+```{r}
+
+```
 
 ### 6) Quel est le meilleur modèle de prédiction, graphiquement?
 
+```{r}
+
+```
+
 ### 7) Comment valider, objectivement, la réponse précédente? Mettre en place ces tests et comparer les résultats à ceux obtenus graphiquement.
 
+```{r}
+
+```
 
 
 
